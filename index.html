@@ -7,7 +7,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: monospace; color: #00ffcc; }
-        #webgl-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        #webgl-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; cursor: pointer; }
         
         .hud {
             position: absolute;
@@ -36,8 +36,8 @@
             text-shadow: 0 0 10px rgba(0,255,204,0.7);
         }
 
-        .portal-btn, .checkout-btn {
-            background: rgba(0, 0, 0, 0.7);
+        .portal-btn, .action-btn {
+            background: rgba(0, 0, 0, 0.8);
             border: 1px solid #00ffcc;
             color: #00ffcc;
             padding: 12px 24px;
@@ -52,7 +52,7 @@
             display: inline-block;
         }
 
-        .portal-btn:hover, .checkout-btn:hover {
+        .portal-btn:hover, .action-btn:hover {
             background: #00ffcc;
             color: #000;
             box-shadow: 0 0 25px rgba(0,255,204,0.8);
@@ -73,6 +73,13 @@
             box-shadow: 0 0 40px rgba(0,255,204,0.15);
             max-width: 480px;
             width: 90%;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .center-card.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -60%);
         }
 
         .center-card h2 {
@@ -88,46 +95,64 @@
             line-height: 1.6;
         }
 
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            flex-wrap: wrap;
+        .audio-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 20;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #00ffcc;
+            padding: 8px 14px;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            pointer-events: auto;
         }
 
-        /* Modal Overlay */
+        /* Modal Overlay for Private Module Portal */
         .modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85);
+            background: rgba(0,0,0,0.9);
             z-index: 100;
             justify-content: center;
             align-items: center;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px);
+            pointer-events: auto;
         }
         .modal.active { display: flex; }
         .modal-content {
             background: #02080f;
-            border: 1px solid #00ffcc;
+            border: 1px solid #ff0055;
             padding: 40px;
-            max-width: 500px;
+            max-width: 450px;
             width: 90%;
             text-align: left;
             position: relative;
-            box-shadow: 0 0 50px rgba(0,255,204,0.3);
+            box-shadow: 0 0 50px rgba(255,0,85,0.3);
         }
         .close-modal {
             position: absolute;
             top: 15px; right: 20px;
-            color: #00ffcc;
+            color: #ff0055;
             font-size: 1.5rem;
             cursor: pointer;
             background: none;
             border: none;
         }
-        .modal-content h3 { margin-bottom: 15px; font-size: 1.2rem; letter-spacing: 2px; }
-        .modal-content p { font-size: 0.85rem; color: #aaeebb; margin-bottom: 20px; line-height: 1.5; }
+        .modal-content h3 { color: #ff0055; margin-bottom: 15px; font-size: 1.2rem; letter-spacing: 2px; }
+        .modal-content p { font-size: 0.85rem; color: #ff88aa; margin-bottom: 20px; line-height: 1.5; }
+        .modal-input {
+            width: 100%;
+            background: #000;
+            border: 1px solid #ff0055;
+            color: #ff88aa;
+            padding: 12px;
+            font-family: monospace;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+        }
     </style>
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -139,15 +164,27 @@
     <div class="hud">
         <div class="top-bar">
             <h1>FluidMotion TV</h1>
-            <button class="portal-btn" onclick="toggleModal(true)">Module Portal</button>
+            <button class="portal-btn" onclick="toggleModal(true)">Private Module Portal</button>
         </div>
         
-        <div class="center-card">
-            <h2>FlowTouch 3D Hologram</h2>
-            <p>Experience harmonic liquid dynamics tuned to 432 Hz Pythagorean frequency. Direct sovereign e-book archive and digital canvas pipeline.</p>
-            <div class="btn-group">
-                <a href="https://www.paypal.com/ncp/payment/fluidmotion.tv@gmail.com" target="_blank" class="checkout-btn">Secure Note ($3)</a>
+        <!-- Page 1: Welcome & Audio Activation -->
+        <div class="center-card" id="welcomeCard">
+            <h2>FluidMotion Sovereign</h2>
+            <p>Harmonic liquid dynamics & 432 Hz Pythagorean frequency. Step into the chromatic ripple experience.</p>
+            <button class="action-btn" onclick="goToSecondPage()">Enter Experience</button>
+        </div>
+
+        <!-- Page 2: Colorful 3D Store / Archive Access (Hidden initially) -->
+        <div class="center-card hidden" id="storeCard">
+            <h2>FlowTouch e-Book Archive</h2>
+            <p>Select your sovereign tier via PayPal (fluidmotion.tv@gmail.com).</p>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
+                <a href="https://www.paypal.com/ncp/payment/fluidmotion.tv@gmail.com" target="_blank" class="action-btn" style="text-align: center; font-size: 0.8rem; padding: 10px;">Tier 1 ($9)</a>
+                <a href="https://www.paypal.com/ncp/payment/fluidmotion.tv@gmail.com" target="_blank" class="action-btn" style="text-align: center; font-size: 0.8rem; padding: 10px;">Tier 2 ($18)</a>
+                <a href="https://www.paypal.com/ncp/payment/fluidmotion.tv@gmail.com" target="_blank" class="action-btn" style="text-align: center; font-size: 0.8rem; padding: 10px;">Tier 3 ($27)</a>
+                <a href="https://www.paypal.com/ncp/payment/fluidmotion.tv@gmail.com" target="_blank" class="action-btn" style="text-align: center; font-size: 0.8rem; padding: 10px; background: #ff0055; border-color: #ff0055; color: #fff;">Master ($54)</a>
             </div>
+            <button class="action-btn" style="font-size: 0.75rem; padding: 6px 12px; background: transparent; border-color: #555; color: #aaa;" onclick="goToFirstPage()">Back</button>
         </div>
 
         <div class="bottom-bar">
@@ -156,17 +193,18 @@
         </div>
     </div>
 
-    <!-- Module Portal Modal / Second Layer View -->
+    <div class="audio-indicator" id="audioToggle" onclick="toggleAudio()">
+        AUDIO: MUTED (CLICK TO START)
+    </div>
+
+    <!-- Private Module Portal Modal (Password Protected or Restricted) -->
     <div class="modal" id="portalModal">
         <div class="modal-content">
             <button class="close-modal" onclick="toggleModal(false)">&times;</button>
-            <h3>Sovereign Module Portal</h3>
-            <p>Access auxiliary decentralized streams, network nodes, and high-frame-rate digital cinematography assets.</p>
-            <div style="display: flex; flex-direction: column; gap: 10px;">
-                <a href="#" class="checkout-btn" style="text-align: center;">Node 01: Wave Dynamics</a>
-                <a href="#" class="checkout-btn" style="text-align: center;">Node 02: Audio Sub-Harmonics</a>
-                <a href="https://www.paypal.com/ncp/payment/fluidmotion.tv@gmail.com" target="_blank" class="checkout-btn" style="text-align: center; background: #00ffcc; color: #000;">Unlock e-Book Archive ($9)</a>
-            </div>
+            <h3>Restricted Node Access</h3>
+            <p>Enter Sovereign Passkey to unlock internal mesh network routing and developer feeds.</p>
+            <input type="password" class="modal-input" id="passkeyInput" placeholder="Enter passkey...">
+            <button class="action-btn" style="width: 100%; text-align: center; border-color: #ff0055; color: #ff0055;" onclick="verifyPasskey()">Authorize Node</button>
         </div>
     </div>
 
@@ -180,7 +218,72 @@
             }
         }
 
-        // Three.js Interactive Wave Grid
+        function verifyPasskey() {
+            const val = document.getElementById('passkeyInput').value;
+            if(val === 'dragon9' || val === 'fluidmotion') {
+                alert('Access Granted: Sovereign Node Online.');
+                toggleModal(false);
+            } else {
+                alert('Access Denied.');
+            }
+        }
+
+        function goToSecondPage() {
+            document.getElementById('welcomeCard').classList.add('hidden');
+            document.getElementById('storeCard').classList.remove('hidden');
+            isColorfulMode = true; // Switch to vibrant chromatic waves
+            if (!audioCtx) toggleAudio(); // Auto-start audio smoothly on entry
+        }
+
+        function goToFirstPage() {
+            document.getElementById('storeCard').classList.add('hidden');
+            document.getElementById('welcomeCard').classList.remove('hidden');
+            isColorfulMode = false;
+        }
+
+        // Web Audio API Synthesizer (432 Hz Ambient Loop)
+        let audioCtx = null;
+        let isPlaying = false;
+        let masterGain = null;
+
+        function toggleAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                masterGain.connect(audioCtx.destination);
+
+                const osc1 = audioCtx.createOscillator();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(108, audioCtx.currentTime);
+                osc1.connect(masterGain);
+                osc1.start();
+
+                const osc2 = audioCtx.createOscillator();
+                osc2.type = 'triangle';
+                osc2.frequency.setValueAtTime(216, audioCtx.currentTime);
+                osc2.connect(masterGain);
+                osc2.start();
+            }
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                masterGain.gain.setTargetAtTime(0.2, audioCtx.currentTime, 0.5);
+                document.getElementById('audioToggle').innerText = 'AUDIO: 432 Hz ACTIVE';
+                document.getElementById('audioToggle').style.borderColor = '#00ffcc';
+                document.getElementById('audioToggle').style.background = 'rgba(0,255,204,0.2)';
+            } else {
+                masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.5);
+                document.getElementById('audioToggle').innerText = 'AUDIO: MUTED';
+                document.getElementById('audioToggle').style.background = 'rgba(0,0,0,0.8)';
+            }
+        }
+
+        // Three.js Interactive Wave Grid + Chromatic Ripples
         const container = document.getElementById('webgl-container');
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -192,9 +295,9 @@
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         container.appendChild(renderer.domElement);
 
-        const planeSizeX = 80;
-        const planeSizeY = 80;
-        const segments = 50;
+        const planeSizeX = 90;
+        const planeSizeY = 90;
+        const segments = 60;
         const geometry = new THREE.PlaneGeometry(planeSizeX, planeSizeY, segments, segments);
         geometry.rotateX(-Math.PI / 2);
 
@@ -202,17 +305,23 @@
             color: 0x00ffcc,
             wireframe: true,
             transparent: true,
-            opacity: 0.25
+            opacity: 0.3
         });
 
         const plane = new THREE.Mesh(geometry, material);
         scene.add(plane);
 
         const posAttribute = geometry.attributes.position;
-        const originalZ = [];
-        for (let i = 0; i < posAttribute.count; i++) {
-            originalZ.push(posAttribute.getY(i));
-        }
+        let isColorfulMode = false;
+        let mouse = new THREE.Vector2(-999, -999);
+        let raycaster = new THREE.Raycaster();
+        let rippleIntensity = 0;
+
+        window.addEventListener('pointermove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            rippleIntensity = 5.0;
+        });
 
         let clock = new THREE.Clock();
 
@@ -220,14 +329,36 @@
             requestAnimationFrame(animate);
             const time = clock.getElapsedTime() * 1.5;
 
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(plane);
+
+            // Dynamic color shifting when on the second page
+            if (isColorfulMode) {
+                const hue = (time * 15) % 360;
+                material.color.setHSL(hue / 360, 0.9, 0.6);
+                material.opacity = 0.45;
+            } else {
+                material.color.setHex(0x00ffcc);
+                material.opacity = 0.3;
+            }
+
             for (let i = 0; i < posAttribute.count; i++) {
                 const x = posAttribute.getX(i);
                 const z = posAttribute.getZ(i);
-                const wave1 = Math.sin(x * 0.1 + time);
-                const wave2 = Math.cos(z * 0.1 + time * 0.8);
-                posAttribute.setY(i, (wave1 + wave2) * 2.5);
+                
+                let wave = Math.sin(x * 0.1 + time) * Math.cos(z * 0.1 + time * 0.8) * 2.5;
+
+                if (intersects.length > 0) {
+                    const dist = Math.sqrt(Math.pow(x - intersects[0].point.x, 2) + Math.pow(z - intersects[0].point.z, 2));
+                    if (dist < 18) {
+                        wave += Math.sin(dist * 0.4 - time * 6) * rippleIntensity * (1 - dist / 18);
+                    }
+                }
+
+                posAttribute.setY(i, wave);
             }
             posAttribute.needsUpdate = true;
+            if (rippleIntensity > 0) rippleIntensity *= 0.94;
 
             renderer.render(scene, camera);
         }
